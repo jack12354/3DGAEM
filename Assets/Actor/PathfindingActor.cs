@@ -17,7 +17,7 @@ public class PathfindingActor : Actor
         float randomAngle = (float)(r.NextDouble() * 360);
         randomOffset = new Vector3(Mathf.Sin(randomAngle) / 4.0f, Mathf.Cos(randomAngle) / 4.0f);
         //  randomOffset = new Vector3((float)((r.NextDouble() * 0.5f) - 0.25f), (float)((r.NextDouble() * 0.5f) - 0.25f));
-        pathToGoal = FindPathToGoalNode(WorldGrid.GetClosestNodeFromPosition(transform.position), WorldGrid.GetGoalNode());
+        pathToGoal = FindPathToGoalNode(WorldGrid.GetClosestNodeFromPosition(transform.position, true), WorldGrid.GetGoalNode());
     }
 
     private List<Node> FindPathToGoalNode(Node inStartNode, Node inGoalNode)
@@ -136,8 +136,12 @@ public class PathfindingActor : Actor
         Gizmos.DrawLine(transform.position, pathToGoal[nodeIndex].transform.position + randomOffset);
 
         Gizmos.color = Color.green;
+        int percent = (int)((1.0f/Grid.PLANES) * 255.0f);
         for (int iter = nodeIndex; iter < pathToGoal.Count - 1; iter++)
         {
+
+            float colorVal = pathToGoal[iter].Parent.GetNodeCoordinates(pathToGoal[iter]).z * percent;
+            Gizmos.color = new Color(colorVal, colorVal, colorVal);
             Gizmos.DrawLine(pathToGoal[iter].transform.position + randomOffset, pathToGoal[iter + 1].transform.position + randomOffset);
         }
     }

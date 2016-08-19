@@ -40,6 +40,7 @@ public class SimpleActor : Actor
     {
         heading.x = (float)((r.NextDouble() * 2.0f) - 1.0f);
         heading.y = (float)((r.NextDouble() * 2.0f) - 1.0f);
+        heading.z = (float)((r.NextDouble() * 2.0f) - 1.0f);
         heading.Normalize();
     }
 

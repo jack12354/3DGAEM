@@ -7,10 +7,11 @@ public class Grid : MonoBehaviour
 {
     public static int ROWS = 9;
     public static int COLUMNS = 17;
+    public static int PLANES = 3;
     public const float GRID_SIZE = 1.0f;
     public string LevelToLoad = "Levels/world1-1";
 
-    public Node[,] mGrid;
+    public Node[,,] mGrid;
     private List<Actor> mActors = new List<Actor>();
     private readonly Dictionary<char, string> charToNodeMap = new Dictionary<char, string>
     {
@@ -34,51 +35,59 @@ public class Grid : MonoBehaviour
         Dictionary<int, PortalNode> portalChannels = new Dictionary<int, PortalNode>();
 
         string level = Resources.Load<TextAsset>(inFilename).text;
-        ROWS = level.Count(x => x == '\r');
         COLUMNS = level.IndexOf('\r');
-        mGrid = new Node[ROWS, COLUMNS];
+        PLANES = level.Count(x => x == '-');
+        ROWS = level.Count(x => x == '\r') / PLANES;
+        mGrid = new Node[ROWS, COLUMNS, PLANES];
         level = level.Replace("\r\n", "");
-        for (int row = 0; row < ROWS; row++)
+        level = level.Replace("-", "");
+        for (int plane = 0; plane < PLANES; plane++)
         {
-            for (int col = 0; col < COLUMNS; col++)
+            for (int row = 0; row < ROWS; row++)
             {
-                char tile = level[row * COLUMNS + col];
-                if (tile >= '0' && tile <= '9')
+                for (int col = 0; col < COLUMNS; col++)
                 {
-                    if (portalChannels.ContainsKey(tile))
+                    char tile = level[plane*ROWS*COLUMNS + row*COLUMNS + col];
+                    if (tile >= '0' && tile <= '9')
                     {
-                        PortalNode node = AddNode(charToNodeMap['p'], row, col) as PortalNode;
-                        node.Link(portalChannels[tile]);
+                        if (portalChannels.ContainsKey(tile))
+                        {
+                            PortalNode node = AddNode(charToNodeMap['p'], row, col, plane) as PortalNode;
+                            node.Link(portalChannels[tile]);
+                        }
+                        else
+                        {
+                            PortalNode node = AddNode(charToNodeMap['p'], row, col, plane) as PortalNode;
+                            portalChannels[(int) tile] = node;
+                        }
                     }
                     else
                     {
-                        PortalNode node = AddNode(charToNodeMap['p'], row, col) as PortalNode;
-                        portalChannels[(int)tile] = node;
+                        AddNode(charToNodeMap[tile], row, col, plane);
                     }
-                }
-                else
-                {
-                    AddNode(charToNodeMap[tile], row, col);
                 }
             }
         }
     }
 
-    private Node AddNode(string inNodeType, int inRow, int inCol)
+    private Node AddNode(string inNodeType, int inRow, int inCol, int inPlane)
     {
-        mGrid[inRow, inCol] = ((GameObject)Instantiate(Resources.Load(inNodeType))).GetComponent<Node>();
-        mGrid[inRow, inCol].OnAdd();
-        mGrid[inRow, inCol].Parent = this;
-        mGrid[inRow, inCol].transform.position = GetGridPosition(inRow, inCol);
-        return mGrid[inRow, inCol];
+        mGrid[inRow, inCol, inPlane] = ((GameObject)Instantiate(Resources.Load(inNodeType))).GetComponent<Node>();
+        mGrid[inRow, inCol, inPlane].OnAdd();
+        mGrid[inRow, inCol, inPlane].Parent = this;
+        mGrid[inRow, inCol, inPlane].transform.position = GetGridPosition(inRow, inCol, inPlane);
+        return mGrid[inRow, inCol,inPlane];
     }
 
-    public Node GetClosestNodeFromPosition(Vector3 inPosition)
+    public Node GetClosestNodeFromPosition(Vector3 inPosition, bool inPassableOnly = false)
     {
         Node bestNode = null;
         float closestDistanceSqr = Mathf.Infinity;
         foreach (var node in mGrid)
         {
+            if (inPassableOnly && !node.IsPassable)
+                continue;
+
             Vector3 directionToTarget = node.transform.position - inPosition;
             float dSqrToTarget = directionToTarget.sqrMagnitude;
             if (dSqrToTarget < closestDistanceSqr)
@@ -113,8 +122,7 @@ public class Grid : MonoBehaviour
     {
         Actor actor = ((GameObject)Instantiate(Resources.Load(inActorType))).GetComponent<Actor>();
         Vector3 screenToWorldPos = Camera.main.ScreenToWorldPoint(inMousePosition);
-        screenToWorldPos.z = 0;
-        actor.transform.position = screenToWorldPos;
+        actor.transform.position = inMousePosition;//screenToWorldPos;
         actor.OnAdd(this);
         mActors.Add(actor);
     }
@@ -122,44 +130,55 @@ public class Grid : MonoBehaviour
     public List<Node> GetNeighbors(Node inNode)
     {
         List<Node> nodes = new List<Node>();
-        for (int row = 0; row < ROWS; row++)
+        for (int pln = 0; pln < PLANES; pln++)
         {
-            for (int col = 0; col < COLUMNS; col++)
+            for (int row = 0; row < ROWS; row++)
             {
-                if (inNode == mGrid[row, col])
+                for (int col = 0; col < COLUMNS; col++)
                 {
-                    if (row - 1 >= 0)
+                    if (inNode == mGrid[row, col, pln])
                     {
-                        nodes.Add(AddNeighborNode(row - 1, col));
-                    }
-                    if (row + 1 < ROWS)
-                    {
-                        nodes.Add(AddNeighborNode(row + 1, col));
-                    }
-                    if (col - 1 >= 0)
-                    {
-                        nodes.Add(AddNeighborNode(row, col - 1));
-                    }
-                    if (col + 1 < COLUMNS)
-                    {
-                        nodes.Add(AddNeighborNode(row, col + 1));
-                    }
+                        if (row - 1 >= 0)
+                        {
+                            nodes.Add(AddNeighborNode(row - 1, col, pln));
+                        }
+                        if (row + 1 < ROWS)
+                        {
+                            nodes.Add(AddNeighborNode(row + 1, col, pln));
+                        }
+                        if (col - 1 >= 0)
+                        {
+                            nodes.Add(AddNeighborNode(row, col - 1, pln));
+                        }
+                        if (col + 1 < COLUMNS)
+                        {
+                            nodes.Add(AddNeighborNode(row, col + 1, pln));
+                        }
+                        if (pln - 1 >= 0)
+                        {
+                            nodes.Add(AddNeighborNode(row, col, pln - 1));
+                        }
+                        if (pln + 1 < PLANES)
+                        {
+                            nodes.Add(AddNeighborNode(row, col, pln + 1));
+                        }
 
-                    if (inNode.GetType() == typeof(PortalNode))
-                    {
-                        nodes.Add(((PortalNode)inNode).linkNode);
-                    }
+                        if (inNode.GetType() == typeof(PortalNode))
+                        {
+                            nodes.Add(((PortalNode) inNode).linkNode);
+                        }
 
-                    return nodes;
+                        return nodes;
+                    }
                 }
             }
         }
         return nodes;
     }
 
-    private Node AddNeighborNode(int row, int col)
+    private Node AddNeighborNode(int row, int col, int pln)
     {
-        Node node = mGrid[row, col];
+        Node node = mGrid[row, col, pln];
        //if (node.GetType() == typeof(PortalNode))
        //{
        //    return ((PortalNode)node).linkNode;
@@ -167,13 +186,30 @@ public class Grid : MonoBehaviour
         return node;
     }
 
-    public Vector3 GetGridPosition(int inRow, int inCol)
+    public Vector3 GetGridPosition(int inRow, int inCol, int inPln)
     {
-        return transform.position + new Vector3((inCol + 0.5f) * GRID_SIZE, (ROWS - inRow - 0.5f) * GRID_SIZE)
-                             - new Vector3(COLUMNS * GRID_SIZE / 2.0f, ROWS * GRID_SIZE / 2.0f);
+        return transform.position + new Vector3((inCol + 0.5f) * GRID_SIZE, (ROWS - inRow - 0.5f) * GRID_SIZE, (inPln) * GRID_SIZE)
+                             - new Vector3(COLUMNS * GRID_SIZE / 2.0f, ROWS * GRID_SIZE / 2.0f, PLANES * GRID_SIZE / 2.0f);
     }
 
+    public Vector3 GetNodeCoordinates(Node inNode)
+    {
+        for (int pln = 0; pln < PLANES; pln++)
+        {
+            for (int row = 0; row < ROWS; row++)
+            {
+                for (int col = 0; col < COLUMNS; col++)
+                {
+                    if (inNode == mGrid[row, col, pln])
+                    {
+                        return new Vector3(row, col, pln);
+                    }
+                }
+            }
+        }
 
+        return -Vector3.one;
+    }
     // Update is called once per frame
     void Update()
     {

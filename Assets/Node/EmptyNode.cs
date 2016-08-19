@@ -22,9 +22,23 @@ public class EmptyNode : Node
     void OnMouseDown()
     {
         Mouse mouse = FindObjectOfType<Mouse>();
-       // for (int i = 0; i < 5; i++)
-       // {
-            Parent.SpawnActorsAtPoint(mouse.SpawnType, Input.mousePosition + new Vector3((float)((r.NextDouble() * 40f) - 20f), (float)((r.NextDouble() * 40f) - 20f)));
+        // for (int i = 0; i < 5; i++)
+        // {
+
+        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        RaycastHit hit;
+
+        if (Physics.Raycast(ray, out hit, 100))
+        {
+            Parent.SpawnActorsAtPoint(mouse.SpawnType, hit.point
+           //  + new Vector3(
+           //  (float)((r.NextDouble() * 1f) - 0.5f), 
+           //  (float)((r.NextDouble() * 1f) - 0.5f), 
+           //  (float)((r.NextDouble() * 1f) - 0.5f))
+           );
+        }
+
+       
        // }
     }
 }

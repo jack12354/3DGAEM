@@ -30,7 +30,15 @@ public class PlayerActor : Actor
         {
             heading += Vector3.right;
         }
-            
+        if (Input.GetKey(KeyCode.PageUp))
+        {
+            heading += Vector3.back;
+        }
+        if (Input.GetKey(KeyCode.PageDown))
+        {
+            heading += Vector3.forward;
+        }
+
         heading.Normalize();
 
         if (WorldGrid.GetClosestNodeFromPosition(transform.position + (heading * Time.deltaTime * 2.0f)).IsPassable)
