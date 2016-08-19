@@ -35,7 +35,9 @@ public class PortalNode : Node
 
     public override void OnRemove()
     {
-
+        if (linkNode)
+            Parent.ReplaceNode(linkNode, "EmptyNode");
+        Destroy(gameObject);
     }
 
     public override void OnEnter(Actor inActor)

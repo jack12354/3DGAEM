@@ -76,7 +76,24 @@ public class Grid : MonoBehaviour
         mGrid[inRow, inCol, inPlane].OnAdd();
         mGrid[inRow, inCol, inPlane].Parent = this;
         mGrid[inRow, inCol, inPlane].transform.position = GetGridPosition(inRow, inCol, inPlane);
+        mGrid[inRow, inCol, inPlane].name = inNodeType + "(" + inRow + ", " + inCol + ", " + inPlane + ")";
+        mGrid[inRow, inCol, inPlane].transform.parent = transform;
         return mGrid[inRow, inCol,inPlane];
+    }
+
+    private void RemoveNode(Node inNode)
+    {
+        inNode.OnRemove();
+        Vector3 coordinates = GetNodeCoordinates(inNode);
+        mGrid[(int) coordinates.x, (int) coordinates.y, (int) coordinates.z] = null;
+    }
+
+    public Node ReplaceNode(Node inNode, string inReplaceType)
+    {
+        Debug.Log(inNode.GetType() + " -> " + inReplaceType);
+        Vector3 coordinates = GetNodeCoordinates(inNode);
+        RemoveNode(inNode);
+        return AddNode(inReplaceType, (int)coordinates.x, (int)coordinates.y, (int)coordinates.z);
     }
 
     public Node GetClosestNodeFromPosition(Vector3 inPosition, bool inPassableOnly = false)
@@ -102,20 +119,17 @@ public class Grid : MonoBehaviour
 
     public bool IsPointPassable(Vector3 inPosition)
     {
-        Node bestNode = null;
-        float closestDistanceSqr = Mathf.Infinity;
-        foreach (var node in mGrid)
-        {
-            Vector3 directionToTarget = node.transform.position - inPosition;
-            float dSqrToTarget = directionToTarget.sqrMagnitude;
-            if (dSqrToTarget < closestDistanceSqr)
-            {
-                closestDistanceSqr = dSqrToTarget;
-                bestNode = node;
-            }
-        }
+        return GetClosestNodeFromPosition(inPosition).IsPassable;
+    }
 
-        return bestNode.IsPassable;
+    public bool IsPointWithinGrid(Vector3 inPosition)
+    {
+        Vector3 zerozerozero = GetGridPosition(0, 0, 0);
+        Vector3 maxmaxmax = GetGridPosition(ROWS - 1, COLUMNS - 1, PLANES - 1);
+        return
+            inPosition.x >= zerozerozero.x && inPosition.x <= maxmaxmax.x &&
+            inPosition.y <= zerozerozero.y && inPosition.y >= maxmaxmax.y &&
+            inPosition.z >= zerozerozero.z && inPosition.z <= maxmaxmax.z;
     }
 
     public void SpawnActorsAtPoint(string inActorType, Vector3 inMousePosition)
@@ -225,7 +239,7 @@ public class Grid : MonoBehaviour
 
         return -Vector3.one;
     }
-    // Update is called once per frame
+
     void Update()
     {
 

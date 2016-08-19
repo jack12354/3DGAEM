@@ -19,37 +19,54 @@ public class Mouse : MonoBehaviour
 
         if (Input.GetMouseButtonDown(0))
         {
-            Mouse mouse = FindObjectOfType<Mouse>();
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             RaycastHit hit;
 
             if (Physics.Raycast(ray, out hit, 100))
             {
-                Node hitNode = hit.transform.gameObject.GetComponent<Node>();
-                if (hitNode)
+                if (SpawnType.EndsWith("Actor"))
                 {
-                    Vector3 spawnPoint = hitNode.Parent.GetClosestNodeFromPosition(hit.point, true).transform.position;
-                    hitNode.Parent.SpawnActorsAtPoint(mouse.SpawnType, spawnPoint
-                         + new Vector3(
-                         (float)((r.NextDouble() * 1f) - 0.5f), 
-                         (float)((r.NextDouble() * 1f) - 0.5f), 
-                         (float)((r.NextDouble() * 1f) - 0.5f))
-                    );
+                    Node hitNode = hit.transform.gameObject.GetComponent<Node>();
+                    if (hitNode)
+                    {
+                        Vector3 spawnPoint =
+                            hitNode.Parent.GetClosestNodeFromPosition(hit.point, true).transform.position;
+                        hitNode.Parent.SpawnActorsAtPoint(SpawnType, spawnPoint
+                                                                           + new Vector3(
+                                                                               (float)((r.NextDouble() * 1f) - 0.5f),
+                                                                               (float)((r.NextDouble() * 1f) - 0.5f),
+                                                                               (float)((r.NextDouble() * 1f) - 0.5f))
+                        );
+                    }
+                }
+                else if (SpawnType.EndsWith("Node"))
+                {
+                    Node hitNode = hit.transform.gameObject.GetComponent<Node>();
+                    if (hitNode)
+                    {
+                        Grid grid = hitNode.Parent;
+                        if (SpawnType == "DeleteNode")
+                        {
+                            grid.ReplaceNode(hitNode, "EmptyNode");
+                        }
+                        else
+                        {
+                            var emptySpacePoint = hit.point + hit.normal * (Grid.GRID_SIZE / 2.0f);
+                            if (grid.IsPointWithinGrid(emptySpacePoint))
+                            {
+                                Node nodeToReplace = grid.GetClosestNodeFromPosition(emptySpacePoint);
+                                grid.ReplaceNode(nodeToReplace, SpawnType);
+                            }
+                        }
+                    }
                 }
             }
+
         }
     }
 
     public void SetSpawningType(string inTypeString)
     {
         SpawnType = inTypeString;
-    }
-
-    void OnMouseDown()
-    {
-      
-
-
-        // }
     }
 }

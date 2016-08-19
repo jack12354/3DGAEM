@@ -8,7 +8,7 @@
 
     public override void OnRemove()
     {
-
+        Destroy(gameObject);
     }
 
     public override void OnEnter(Actor inActor)
