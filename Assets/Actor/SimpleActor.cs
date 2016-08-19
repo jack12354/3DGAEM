@@ -15,6 +15,7 @@ public class SimpleActor : Actor
 
     public override void OnRemove()
     {
+        WorldGrid.RemoveActor(this);
         Destroy(gameObject);
     }
 
