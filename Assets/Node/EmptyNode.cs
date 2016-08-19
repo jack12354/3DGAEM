@@ -12,6 +12,7 @@ public class EmptyNode : Node
     public override void OnRemove()
     {
         Debug.LogWarning("You shouldn't be removing EmptyNodes from the grid, but feel free to carry on");
+        Destroy(gameObject);
     }
 
     public override void OnEnter(Actor inActor)
