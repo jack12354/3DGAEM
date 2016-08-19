@@ -127,6 +127,21 @@ public class Grid : MonoBehaviour
         mActors.Add(actor);
     }
 
+    public void RemoveActor(Actor inActor)
+    {
+        mActors.Remove(inActor);
+    }
+
+    public List<Actor> GetAllActors()
+    {
+        return mActors;
+    }
+
+    public List<Actor> GetAllActorsOfType<T>()
+    {
+        return mActors.Where(a => a.GetType() == typeof(T)).ToList();
+    }
+
     public List<Node> GetNeighbors(Node inNode)
     {
         List<Node> nodes = new List<Node>();
